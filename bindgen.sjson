@@ -1,0 +1,25 @@
+inputs = [
+	"pocketpy-v2.1.8"
+]
+
+output_folder = "pocketpy"
+imports_file = "imports.odin"
+package_name = "pocketpy"
+
+remove_type_prefix = "py_"
+remove_macro_prefix = "PY_"
+remove_function_prefix = "py_"
+
+rename = {
+    "py_import" = "do_import"
+    "py_bool" = "cbool"
+}
+
+type_overrides = {
+    "py_Ref" = "[^]TValue"
+    "py_ObjectRef" = "[^]TValue"
+    "py_GlobalRef" = "[^]TValue"
+    "py_StackRef" = "[^]TValue"
+    "py_ItemRef" = "[^]TValue"
+    "py_OutRef" = "[^]TValue"
+}
