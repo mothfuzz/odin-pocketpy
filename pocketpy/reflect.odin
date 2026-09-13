@@ -71,36 +71,37 @@ get_field :: proc(fv: any) -> bool {
     return true
 }
 
-bind_field :: proc(class: Type, $T: typeid, n: int, $slot: int) {
-    if slot < n {
+import "base:intrinsics"
+bind_field :: proc(class: Type, $T: typeid, $slot: int) {
+    field := reflect.struct_field_at(T, slot)
+    field_name := strings.clone_to_cstring(field.name, context.temp_allocator)
 
+    setter := proc "c" (argc: i32, argv: Ref) -> bool {
+        context = ctx
+        CHECK_ARGC(argc, 2) or_return
+        self := (^T)(touserdata(arg(argv, 0)))
         field := reflect.struct_field_at(T, slot)
-        field_name := strings.clone_to_cstring(field.name, context.temp_allocator)
+        //can't pass 'self' directly as any implicitly takes address-of
+        base := any{rawptr(self), typeid_of(T)}
+        fv := reflect.struct_field_value(base, field)
+        set_field(fv, arg(argv, 1)) or_return
+        newnone(retval())
+        return true
+    }
 
-        setter := proc "c" (argc: i32, argv: Ref) -> bool {
-            context = ctx
-            CHECK_ARGC(argc, 2) or_return
-            self := (^T)(touserdata(arg(argv, 0)))
-            field := reflect.struct_field_at(T, slot)
-            //can't pass 'self' directly as any implicitly takes address-of
-            base := any{rawptr(self), typeid_of(T)}
-            fv := reflect.struct_field_value(base, field)
-            set_field(fv, arg(argv, 1)) or_return
-            newnone(retval())
-            return true
-        }
-
-        getter := proc "c" (argc: i32, argv: Ref) -> bool {
-            context = ctx
-            CHECK_ARGC(argc, 1) or_return
-            self := (^T)(touserdata(arg(argv, 0)))
-            field := reflect.struct_field_at(T, slot)
-            base := any{rawptr(self), typeid_of(T)}
-            fv := reflect.struct_field_value(base, field)
-            get_field(fv) or_return
-            return true
-        }
-        bindproperty(class, field_name, getter, setter);
+    getter := proc "c" (argc: i32, argv: Ref) -> bool {
+        context = ctx
+        CHECK_ARGC(argc, 1) or_return
+        self := (^T)(touserdata(arg(argv, 0)))
+        field := reflect.struct_field_at(T, slot)
+        base := any{rawptr(self), typeid_of(T)}
+        fv := reflect.struct_field_value(base, field)
+        get_field(fv) or_return
+        return true
+    }
+    bindproperty(class, field_name, getter, setter);
+    when slot + 1 < intrinsics.type_struct_field_count(T) {
+        bind_field(class, T, slot + 1)
     }
 }
 
@@ -159,21 +160,5 @@ bindstruct :: proc(module: GlobalRef, $T: typeid) {
     }
     bindmethod(class, "__repr__", __repr__)
 
-    n := reflect.struct_field_count(T)
-    bind_field(class, T, n, 00)
-    bind_field(class, T, n, 01)
-    bind_field(class, T, n, 02)
-    bind_field(class, T, n, 03)
-    bind_field(class, T, n, 04)
-    bind_field(class, T, n, 05)
-    bind_field(class, T, n, 06)
-    bind_field(class, T, n, 07)
-    bind_field(class, T, n, 08)
-    bind_field(class, T, n, 09)
-    bind_field(class, T, n, 10)
-    bind_field(class, T, n, 11)
-    bind_field(class, T, n, 12)
-    bind_field(class, T, n, 13)
-    bind_field(class, T, n, 14)
-    bind_field(class, T, n, 15)
+    bind_field(class, T, 0)
 }

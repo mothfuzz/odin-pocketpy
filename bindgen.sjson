@@ -3,7 +3,7 @@ inputs = [
 ]
 
 output_folder = "pocketpy"
-imports_file = "imports.odin"
+imports_file = "imports.odin.template"
 package_name = "pocketpy"
 
 remove_type_prefix = "py_"
